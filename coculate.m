@@ -96,3 +96,33 @@ B_1 = inv(inv_B_1)
 
 inv_B_1_new_cali = inv(B_1_new_cali)
 
+%% 畫出 (-0.1)/(s*(s-10)) 的波德圖
+fprintf('=== Bode Plot of G(s) = (-0.1)/(s*(s-10)) ===\n');
+
+% 定義轉移函數
+num = 0.1;  % 分子
+den = [1 -10 0];  % 分母: s^2 - 10s + 0 = s*(s-10)
+
+% 建立轉移函數
+G = tf(num, den);
+
+% 顯示轉移函數
+disp('Transfer Function:');
+disp(G);
+
+% 畫波德圖
+figure;
+bode(G);
+grid on;
+title('Bode Plot of G(s) = (-0.1)/(s*(s-10))');
+
+% 取得波德圖數據（可選）
+[mag, phase, w] = bode(G);
+
+% 找出特定頻率的增益和相位（例如：在 w = 1 rad/s）
+w_target = 1;
+[mag_at_1, phase_at_1] = bode(G, w_target);
+fprintf('At ω = 1 rad/s:\n');
+fprintf('  Magnitude = %.4f dB\n', 20*log10(mag_at_1));
+fprintf('  Phase = %.2f degrees\n', phase_at_1);
+

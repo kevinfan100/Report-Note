@@ -149,3 +149,99 @@ Where:
 *case 5'd21 → case 5'd29:* Low-Pass Filter coefficient calculation completed
 
 *case 9'd56 → case 9'd98:* PID control operation completed, output oHsVctrlTot_VECT6[0]
+
+#pagebreak()
+
+= Extended PID Control Analysis
+
+== 3. Complete PID Implementation Formula
+
+=== Tustin Transform Coefficients
+
+The PID controller uses Tustin (bilinear) transform to discretize the continuous PID controller:
+
+*Coefficient Calculations:*
+
+`Intm_Coeff = Kd/(T/2) + Ki*(T/2)`
+
+`oHsCoeff = Intm_Coeff + Kp = Kp + Ki*(T/2) + Kd/(T/2)`
+
+`oHsCoeff1 = Intm_Coeff - Kp = Ki*(T/2) + Kd/(T/2) - Kp`
+
+`oHsCoeff2 = Ki*T - 4*Kd/T`
+
+=== Complete PID Recursive Formula
+
+The discrete PID controller implementation:
+
+`u[n] = oHsCoeff * e[n] + oHsCoeff1 * e[n-1] + oHsCoeff2 * e[n-2] + u[n-2]`
+
+Where:
+- `e[n] = Vd_LPF[n] - Vm[n]` (Error signal)
+- `u[n]` = Control output
+- `e[n-1], e[n-2]` = Previous error samples
+- `u[n-2]` = Control output two samples ago
+
+=== Low-Pass Filter Implementation
+
+The desired voltage `Vd` passes through a low-pass filter before PID control:
+
+`Vd_LPF[n] = HsVd_Coeff * (Vd[n] + Vd[n-1]) + HsVd_LPF_Coeff1 * Vd_LPF[n-1]`
+
+Filter coefficients:
+- `HsVd_Coeff = T/(2*tau + T)`
+- `HsVd_LPF_Coeff1 = (2*tau - T)/(2*tau + T)`
+
+=== Feedforward Control
+
+The total control effort includes feedforward compensation:
+
+`u_total[n] = u_PID[n] + u_FF[n]`
+
+Where feedforward term:
+`u_FF[n] = Vd_LPF[n] / FFgain`
+
+== 4. Implementation Details
+
+=== Sampling Rate
+
+- Default sampling frequency: 100 kHz (T = 10 μs)
+- Optional 200 kHz mode available via `mHsCtrl_Rate` flag
+
+=== History Management
+
+The controller maintains history for recursive computation:
+- `HsVerr1_VECT6[i]` = e[n-1]
+- `HsVerr2_VECT6[i]` = e[n-2]
+- `HsVctrlCompl_1_VECT6[i]` = u[n-1]
+- `HsVctrlCompl_2_VECT6[i]` = u[n-2]
+
+=== Parameter Update Handling
+
+When PID gains or sampling interval changes:
+1. All history buffers reset to zero
+2. Coefficients recalculated (case 5'd0 to 5'd29)
+3. `HsCoeff_InHsCtrl_bol` flag set to trigger update
+
+=== Output Scaling
+
+Final control output scaled for DAC:
+1. Multiply by `iDA_Scale1V_fp` (floating-point scaling)
+2. Convert to 16-bit integer
+3. Add offset 32768 for unsigned DAC format
+
+== 5. State Machine Sequence
+
+=== Coefficient Update Phase (5-bit counter)
+- *States 0-5:* Calculate `HsIgain_M_SplIntvO2`, `HsDgain_D_SplIntvO2`
+- *States 6-12:* Calculate intermediate coefficients
+- *States 13-20:* Calculate `FourHsDgain_D_SplIntv`, `Intm_Coeff`
+- *States 21-29:* Final coefficient assembly and LPF coefficients
+
+=== Control Calculation Phase (9-bit counter)
+- *States 0-20:* State estimation and prediction
+- *States 21-55:* Low-pass filter calculation
+- *States 56-69:* Error calculation and feedforward
+- *States 70-98:* PID control law computation
+- *States 99-111:* Total control output assembly
+- *States 112-230:* Output scaling and format conversion
