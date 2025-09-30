@@ -341,32 +341,8 @@ $ "tune"_"L3" = "ThreeD_sine_theta" $
 其中：$beta = "beta_model"$, $lambda = "lambda_w"$
 ]
 #pagebreak()
-#highlight-box[
-*其他版本 (已註解):*
-```c
-// Simple version (PT3DView.cpp line 3321-3322, 3324-3325)
-tune_L1 = 2 * lambda_w - 1 - beta_model;
-tune_L2 = lambda_w*lambda_w / beta_model - 1;
-
-// Polynomial version (PT3DView.cpp line 3332-3333)  
-tune_L1 = (lambda_w - 1)*(lambda_w - 1)*(lambda_w - 1)*(lambda_w + 3);
-tune_L2 = -(lambda_w - 1)*(lambda_w - 1)*(lambda_w - 1)*(lambda_w - 1);
-
-// M-delay version (PT3DView.cpp line 3326-3327)
-tune_L1 = ((2*lambda_w - (1+beta_model))*((1+beta_model)*(A1matrix[0][0]-lambda_inner) + beta_model) 
-          - (lambda_w*lambda_w - beta_model)*(A1matrix[0][0]-lambda_inner)) 
-          / ((1+beta_model)*(A1matrix[0][0]-lambda_inner) + beta_model 
-          + (A1matrix[0][0]-lambda_inner)*(A1matrix[0][0]-lambda_inner));
-          
-tune_L2 = ((2*lambda_w - (1+beta_model))*(A1matrix[0][0]-lambda_inner) 
-          + (lambda_w*lambda_w - beta_model)) 
-          / ((1+beta_model)*(A1matrix[0][0]-lambda_inner) + beta_model 
-          + (A1matrix[0][0]-lambda_inner)*(A1matrix[0][0]-lambda_inner));
-```
-]
 
 
-#pagebreak()
 
 === **inv_B**
 
@@ -418,83 +394,7 @@ L2_esti = [
 ```
 ]
 
-#pagebreak()
 
-= 論文理論算法數學表達式總結
-
-== 1. 六輸入六輸出磁通控制系統 (Six-Input-Six-Output Magnetic Flux Control)
-
-*系統離散模型 (方程式6):*
-$ bold(v)_m lr([k+1]) = a_1 bold(v)_m lr([k]) + a_2 bold(v)_m lr([k-1]) + bold(B){bold(u) lr([k]) + bold(w) lr([k])} $
-
-其中：
-- $bold(v)_m$: 6×1 Hall sensor電壓向量
-- $bold(u)$: 6×1 控制輸入向量  
-- $bold(w)$: 6×1 擾動向量
-- $a_1 = 0.9898$, $a_2 = 0.6053$ (系統極點)
-- $bold(B)$: 6×6 輸入矩陣
-
-== 2. 控制律設計 (方程式7)
-
-*控制目標:* $delta bold(v) lr([k+1]) = lambda_c delta bold(v) lr([k])$, 其中 $0 ≤ lambda_c < 1$
-
-*控制律:*
-$ bold(u) lr([k]) = bold(B)^(-1) lr({bold(v)_"ff" lr([k]) + delta bold(v)_"fb" lr([k])}) - hat(bold(w)) lr([k]) $
-
-*前饋控制:*
-$ bold(v)_"ff" lr([k]) = bold(v)_d lr([k+1]) - a_1 bold(v)_d lr([k]) - a_2 bold(v)_d lr([k-1]) $
-
-*回饋控制:*  
-$ delta bold(v)_"fb" lr([k]) = (a_1 - lambda_c)hat(delta bold(v)) lr([k]) + a_2 hat(delta bold(v)) lr([k-1]) $
-
-== 3. 追蹤誤差動態 (方程式8)
-
-$ delta bold(v) lr([k+1]) = lambda_c delta bold(v) lr([k]) - bold(B)bold(e)_w lr([k]) + (a_1 - lambda_c)bold(e)_("delta v") lr([k]) + a_2 bold(e)_("delta v") lr([k-1]) $
-
-其中：
-- $bold(e)_w = bold(w) - hat(bold(w))$: 擾動估測誤差
-- $bold(e)_("delta v") = delta bold(v) - hat(delta bold(v))$: 狀態估測誤差
-
-== 4. 增強狀態估測器 (方程式9)
-
-$ hat(bold(s))_1 lr([k+1]) = lambda_c hat(bold(s))_1 lr([k]) + bold(L)_1{delta bold(v) lr([k]) - hat(bold(s))_1 lr([k])} $
-
-$ hat(bold(s))_2 lr([k+1]) = hat(bold(s))_1 lr([k]) + bold(L)_2{delta bold(v) lr([k]) - hat(bold(s))_1 lr([k])} $
-
-$ hat(bold(w)) lr([k+1]) = hat(bold(w)) lr([k]) + delta hat(bold(w)) lr([k]) + bold(L)_3{delta bold(v) lr([k]) - hat(bold(s))_1 lr([k])} $
-
-$ delta hat(bold(w)) lr([k+1]) = delta hat(bold(w)) lr([k]) + bold(L)_4{delta bold(v) lr([k]) - hat(bold(s))_1 lr([k])} $
-
-== 5. 估測器回饋矩陣 (方程式11)
-
-$ bold(L)_1 = (2 + a_1 - 4lambda_e)bold(I) $
-
-$ bold(L)_2 = (1 + lambda_e^4/a_2)bold(I) $
-
-$ bold(L)_3 = -(1 - lambda_e)^3(3 + lambda_e)bold(B)^(-1) $
-
-$ bold(L)_4 = -(1 - lambda_e)^4 bold(B)^(-1) $
-
-== 6. 最優磁通分配 (Optimal Flux Allocation)
-
-*Hall sensor磁力模型 (方程式3):*
-$ bold(f)_m(bold(p), bold(v)_H) = g_H bold(v)_H^T hat(bold(D))_H^T bold(L)(bold(p)/ell)hat(bold(D))_H bold(v)_H $
-
-*最優電壓分配 (方程式5):*
-$ bold(v)_("opt")(bold(f)_d, bold(p)) = sqrt(f_d/g_H) hat(bold(D))_H^(-1) hat(bold(phi))_("opt")(phi, theta, bold(p)) $
-
-== 7. 關鍵系統參數
-
-*控制器參數:*
-- $lambda_c = 0.9391$ → 控制頻寬 1000 Hz
-- $lambda_e = 0.7304$ → 估測器頻寬 5000 Hz  
-- 採樣頻率: 100 kHz (採樣週期 10 μs)
-
-*系統極點 (z-domain):*
-- $p_1 = 0.9898$ → 主導極點
-- $p_2 = 0.6053$ → 次要極點
-- 開迴路頻寬: ~160 Hz
-- 閉迴路頻寬: 1000 Hz
 
 
 
