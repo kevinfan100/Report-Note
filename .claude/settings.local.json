@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(Sort-Object)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(head:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(move usa_demo_screenshot.png images )",
+      "Bash(move taiwan_demo_screenshot.png images)"
     ],
     "deny": [],
     "ask": []
