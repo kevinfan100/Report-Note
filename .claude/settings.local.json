@@ -7,7 +7,9 @@
       "Bash(ls:*)",
       "Bash(mkdir:*)",
       "Bash(move usa_demo_screenshot.png images )",
-      "Bash(move taiwan_demo_screenshot.png images)"
+      "Bash(move taiwan_demo_screenshot.png images)",
+      "Bash(python:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
