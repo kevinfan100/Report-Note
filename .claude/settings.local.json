@@ -9,7 +9,8 @@
       "Bash(move usa_demo_screenshot.png images )",
       "Bash(move taiwan_demo_screenshot.png images)",
       "Bash(python:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(matlab -batch \"verify_observer_gains\")"
     ],
     "deny": [],
     "ask": []
